@@ -111,8 +111,28 @@ export default function WristbandContainer({
           </div>
         ) : (
           /* Expanded Full Mobile Frame */
-          <div className="w-full max-w-sm h-[88vh] bg-slate-100 border border-slate-300 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
-            {children}
+          <div className="w-full max-w-sm h-[88vh] bg-slate-900 border-2 border-slate-700 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+            {/* Mobile Watch Status Bar */}
+            <div className="bg-slate-950 px-4 py-2 flex items-center justify-between text-[11px] font-mono text-slate-200 border-b border-slate-800 flex-shrink-0">
+              <span className="font-black text-cyan-400">{currentTime || '14:50'}</span>
+              
+              <button
+                onClick={onOpenNfcSimulator}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-100 border border-slate-600 shadow-sm font-bold"
+              >
+                <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+                <span>NFC</span>
+              </button>
+
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] text-emerald-400 font-bold">98%</span>
+                <Battery className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+              {children}
+            </div>
           </div>
         )}
       </main>

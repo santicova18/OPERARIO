@@ -39,30 +39,51 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
     triggerFeedback(`Operario: ${op.name}`);
   };
 
+  const isMachineSelected = Boolean(currentSession.maquinaZona);
+  const isOpSelected = Boolean(currentSession.ordenProduccion);
+  const isOperatorSelected = Boolean(currentSession.operario);
+  const canProceed = isMachineSelected && isOpSelected && isOperatorSelected;
+
+  const handleConfirm = () => {
+    if (!canProceed) {
+      triggerFeedback('⚠️ Seleccione Máquina y OP para continuar');
+      return;
+    }
+    onConfirmMachineAndStart();
+  };
+
   return (
     <div className="flex-1 flex flex-col p-3 bg-slate-100 text-slate-900 overflow-y-auto justify-between select-none">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-300">
         {showBackButton ? (
           <button
-            onClick={onConfirmMachineAndStart}
+            onClick={handleConfirm}
             className="tactile-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-200 text-cyan-700 border border-slate-300 text-xs font-bold shadow-sm"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
             <span>VOLVER</span>
           </button>
         ) : (
-          <div className="text-[10px] text-slate-500 font-mono font-bold">PASO 1 DE 2</div>
+          <div className="text-[10px] text-slate-500 font-mono font-bold">PANTALLA 2: IDENTIFICACIÓN</div>
         )}
 
         <div className="flex items-center gap-1.5">
           <Radio className="w-4 h-4 text-cyan-600 animate-pulse" />
-          <span className="text-xs font-black uppercase text-cyan-700">VINCULAR ESTACIÓN NFC</span>
+          <span className="text-xs font-black uppercase text-cyan-700">CHIP NFC / ESTACIÓN</span>
         </div>
       </div>
 
+      {/* Cyclic return status banner */}
+      {!currentSession.maquinaZona && !currentSession.ordenProduccion && (
+        <div className="bg-cyan-50 border border-cyan-300 text-cyan-900 px-3 py-1.5 rounded-xl text-center text-[10.5px] font-bold shadow-sm my-1 flex items-center justify-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
+          <span>Aproxime el chip a la nueva máquina y seleccione la OP</span>
+        </div>
+      )}
+
       {tapMsg && (
-        <div className="bg-cyan-50 border border-cyan-400 text-cyan-900 px-3 py-1.5 rounded-xl text-center text-xs font-mono font-bold animate-bounce my-1 shadow-sm">
+        <div className="bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1.5 rounded-xl text-center text-xs font-mono font-bold animate-bounce my-1 shadow-sm">
           {tapMsg}
         </div>
       )}
@@ -71,9 +92,12 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
       <div className="flex-1 my-2 space-y-3 overflow-y-auto pr-1">
         {/* 1. Machines */}
         <div>
-          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
-            <Cpu className="w-3 h-3 text-cyan-600" />
-            <span>1. Seleccionar / Aproximar a Máquina</span>
+          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block mb-1 flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <Cpu className="w-3 h-3 text-cyan-600" />
+              <span>1. Seleccionar Máquina / Celda</span>
+            </span>
+            {!isMachineSelected && <span className="text-[9px] text-rose-500 font-bold">* Requerido</span>}
           </label>
           <div className="space-y-1">
             {PRESET_MACHINES.map((m) => {
@@ -84,12 +108,12 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
                   onClick={() => handleSelectMachine(m)}
                   className={`tactile-btn w-full p-2.5 rounded-xl text-left border flex items-center justify-between transition-all shadow-sm ${
                     isSelected
-                      ? 'bg-cyan-50 border-cyan-500 text-cyan-950 font-bold'
+                      ? 'bg-cyan-50 border-cyan-500 text-cyan-950 font-bold ring-2 ring-cyan-400/40'
                       : 'bg-white border-slate-300 text-slate-800 hover:border-slate-400'
                   }`}
                 >
                   <span className="text-xs font-bold truncate">{m.name}</span>
-                  {isSelected && <Check className="w-4 h-4 text-cyan-600" />}
+                  {isSelected && <Check className="w-4 h-4 text-cyan-600 stroke-[3]" />}
                 </button>
               );
             })}
@@ -98,9 +122,12 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
 
         {/* 2. Production Orders */}
         <div>
-          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
-            <FileSpreadsheet className="w-3 h-3 text-amber-600" />
-            <span>2. Vincular Orden de Producción (OP)</span>
+          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block mb-1 flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <FileSpreadsheet className="w-3 h-3 text-amber-600" />
+              <span>2. Vincular Orden de Producción (OP)</span>
+            </span>
+            {!isOpSelected && <span className="text-[9px] text-rose-500 font-bold">* Requerido</span>}
           </label>
           <div className="grid grid-cols-2 gap-1.5">
             {PRESET_OPS.map((op) => {
@@ -111,11 +138,11 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
                   onClick={() => handleSelectOP(op)}
                   className={`tactile-btn p-2 rounded-xl text-center border font-mono text-xs transition-all shadow-sm ${
                     isSelected
-                      ? 'bg-amber-50 border-amber-500 text-amber-950 font-bold'
+                      ? 'bg-amber-50 border-amber-500 text-amber-950 font-bold ring-2 ring-amber-400/40'
                       : 'bg-white border-slate-300 text-slate-800 hover:border-slate-400'
                   }`}
                 >
-                  <div>{op.id}</div>
+                  <div className="font-black">{op.id}</div>
                   <div className="text-[9px] text-slate-500 font-sans truncate">{op.desc}</div>
                 </button>
               );
@@ -138,7 +165,7 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
                   onClick={() => handleSelectOperator(op)}
                   className={`tactile-btn p-2 rounded-xl text-center border text-xs font-bold transition-all shadow-sm ${
                     isSelected
-                      ? 'bg-emerald-50 border-emerald-500 text-emerald-950'
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-400/40'
                       : 'bg-white border-slate-300 text-slate-800 hover:border-slate-400'
                   }`}
                 >
@@ -152,13 +179,20 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
       </div>
 
       {/* Primary Action Button */}
-      <button
-        onClick={onConfirmMachineAndStart}
-        className="tactile-btn w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 shadow-md shadow-emerald-900/20"
-      >
-        <Play className="w-4 h-4 fill-slate-950" />
-        <span>CONFIRMAR E INICIAR OPERACIÓN</span>
-      </button>
+      <div className="pt-2 border-t border-slate-200">
+        <button
+          onClick={handleConfirm}
+          disabled={!canProceed}
+          className={`tactile-btn w-full py-3 font-black rounded-xl text-xs uppercase tracking-wider text-center flex items-center justify-center gap-2 shadow-md transition-all ${
+            canProceed 
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-emerald-900/20 active:scale-95' 
+              : 'bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300'
+          }`}
+        >
+          <Play className="w-4 h-4 fill-current" />
+          <span>{canProceed ? 'CONFIRMAR E INICIAR OPERACIÓN' : 'SELECCIONE MÁQUINA Y OP'}</span>
+        </button>
+      </div>
     </div>
   );
 }
