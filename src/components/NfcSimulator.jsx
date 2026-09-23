@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Radio, Check, ArrowLeft, User, Cpu, FileSpreadsheet, Play } from 'lucide-react';
+import { Radio, Check, ArrowLeft, User, Cpu, FileSpreadsheet, Play, AlertTriangle } from 'lucide-react';
 
 const PRESET_OPERATORS = [
-  { id: 'OP-7712', name: 'Juan Pérez' },
-  { id: 'OP-4309', name: 'Carlos Ruiz' }
+  { id: 'OP-01', name: 'Operario 1' },
+  { id: 'OP-02', name: 'Operario 2' }
 ];
 
 const PRESET_MACHINES = [
@@ -16,7 +16,15 @@ const PRESET_OPS = [
   { id: 'OP-5510', desc: 'Tolva Recepción' }
 ];
 
-export default function NfcSimulator({ currentSession, onUpdateSession, onConfirmMachineAndStart, showBackButton = false }) {
+export default function NfcSimulator({ 
+  currentSession, 
+  onUpdateSession, 
+  onConfirmMachineAndStart, 
+  showBackButton = false,
+  cierreExitoso = false,
+  cierreInfo = null,
+  onClearCierreExitoso
+}) {
   const [tapMsg, setTapMsg] = useState('');
 
   const triggerFeedback = (msg) => {
@@ -27,15 +35,17 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
   const handleSelectMachine = (m) => {
     onUpdateSession({ maquinaZona: m.name });
     triggerFeedback(`Máquina seleccionada: ${m.id}`);
+    if (onClearCierreExitoso) onClearCierreExitoso();
   };
 
   const handleSelectOP = (op) => {
     onUpdateSession({ ordenProduccion: op.id });
     triggerFeedback(`Orden (OP): ${op.id}`);
+    if (onClearCierreExitoso) onClearCierreExitoso();
   };
 
   const handleSelectOperator = (op) => {
-    onUpdateSession({ operario: `${op.name} (${op.id})` });
+    onUpdateSession({ operario: op.name });
     triggerFeedback(`Operario: ${op.name}`);
   };
 
@@ -49,6 +59,7 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
       triggerFeedback('⚠️ Seleccione Máquina y OP para continuar');
       return;
     }
+    if (onClearCierreExitoso) onClearCierreExitoso();
     onConfirmMachineAndStart();
   };
 
@@ -74,8 +85,31 @@ export default function NfcSimulator({ currentSession, onUpdateSession, onConfir
         </div>
       </div>
 
-      {/* Cyclic return status banner */}
-      {!currentSession.maquinaZona && !currentSession.ordenProduccion && (
+      {/* Prominent Cierre Banner (Normal Exitoso vs Parada Operativa Conflictiva) */}
+      {cierreInfo?.tipo === 'conflicto' ? (
+        <div className="bg-rose-50 border-2 border-rose-500 text-rose-950 p-2.5 rounded-2xl text-center shadow-md my-1 animate-fadeIn flex flex-col items-center justify-center gap-1">
+          <div className="flex items-center gap-1.5 text-rose-800 uppercase tracking-wider text-[11px] font-black">
+            <AlertTriangle className="w-4 h-4 text-rose-600 stroke-[2.5]" />
+            <span>{cierreInfo.titulo || '⚠️ PARADA OPERATIVA (MOTIVO CONFLICTIVO)'}</span>
+          </div>
+          <div className="text-[10.5px] text-slate-700 font-bold font-sans">
+            {cierreInfo.subtitulo || 'Orden cerrada por conflicto operativo. Seleccione la nueva máquina y la OP.'}
+          </div>
+        </div>
+      ) : cierreExitoso ? (
+        <div className="bg-emerald-50 border-2 border-emerald-500 text-emerald-950 p-2.5 rounded-2xl text-center shadow-md my-1 animate-fadeIn flex flex-col items-center justify-center gap-1">
+          <div className="flex items-center gap-1.5 text-emerald-800 uppercase tracking-wider text-[11px] font-black">
+            <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+            <span>{cierreInfo?.titulo || '¡CIERRE DE OPERACIÓN EXITOSO!'}</span>
+          </div>
+          <div className="text-[10.5px] text-slate-700 font-bold font-sans">
+            {cierreInfo?.subtitulo || 'Seleccione la nueva máquina y la OP para iniciar la siguiente labor.'}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Cyclic return status banner when free */}
+      {!cierreExitoso && !currentSession.maquinaZona && !currentSession.ordenProduccion && (
         <div className="bg-cyan-50 border border-cyan-300 text-cyan-900 px-3 py-1.5 rounded-xl text-center text-[10.5px] font-bold shadow-sm my-1 flex items-center justify-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
           <span>Aproxime el chip a la nueva máquina y seleccione la OP</span>

@@ -146,7 +146,7 @@ export default function JuegoEncaje({
 
       {/* 3. THREE GIANT ERGONOMIC ACTION BUTTONS */}
       <div className="flex-1 my-3 flex flex-col gap-2.5 justify-center">
-        {/* BUTTON 1: OPERACIÓN NORMAL (VIBRANT GREEN CTA) */}
+        {/* BUTTON 1: OPERACIÓN NORMAL (CIERRE AUTOMÁTICO EXITOSO) */}
         <button
           onClick={onStartProduction}
           className={`tactile-btn flex-1 min-h-[90px] w-full p-4 rounded-3xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-4 border-emerald-300 shadow-lg flex items-center justify-between transition-all ${
@@ -155,14 +155,14 @@ export default function JuegoEncaje({
         >
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-slate-950 text-emerald-400 flex items-center justify-center font-black shadow-md flex-shrink-0">
-              <Play className="w-7 h-7 fill-emerald-400 ml-0.5" />
+              <CheckCircle className="w-7 h-7 stroke-[2.5]" />
             </div>
             <div className="text-left">
               <div className="text-base font-black uppercase tracking-tight leading-none text-slate-950">
-                {isProductionActive ? 'OPERACIÓN NORMAL' : 'RESOLVER / REANUDAR'}
+                OPERACIÓN NORMAL
               </div>
               <div className="text-[11px] font-extrabold text-slate-900/80 mt-1">
-                🟢 {activeNovelty ? 'Cierra MTTR y reanuda OP' : 'Operación normal en planta'}
+                🟢 Cierre automático exitoso de la orden
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function JuegoEncaje({
           <ChevronRight className="w-7 h-7 text-slate-950 stroke-[3]" />
         </button>
 
-        {/* BUTTON 3: INCIDENCIA / FIN (ALERT RED BUTTON) */}
+        {/* BUTTON 3: INCIDENCIA / FIN (ALERT RED BUTTON - PARADA OPERATIVA) */}
         <button
           onClick={onOpenIncidenciaView}
           className="tactile-btn flex-1 min-h-[85px] w-full p-4 rounded-3xl bg-rose-500 hover:bg-rose-400 text-slate-950 border-3 border-rose-300 shadow-md flex items-center justify-between transition-all"
@@ -204,7 +204,7 @@ export default function JuegoEncaje({
                 INCIDENCIA / FIN
               </div>
               <div className="text-[11px] font-extrabold text-slate-900/80 mt-0.5">
-                🔴 Mantenimiento / Parada Crítica
+                🔴 Cierre por conflicto / Parada Operativa
               </div>
             </div>
           </div>

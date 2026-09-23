@@ -52,7 +52,7 @@ export default function RecordHistoryModal({ records = [], novedades = [], onClo
               <p className="text-[10px] text-cyan-400 font-bold">Base de Datos de Manilla Inteligente</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"
           >
@@ -65,21 +65,19 @@ export default function RecordHistoryModal({ records = [], novedades = [], onClo
           <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800">
             <button
               onClick={() => setActiveTab('oee')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all ${
-                activeTab === 'oee' 
-                  ? 'bg-slate-800 text-cyan-300 shadow-sm' 
+              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all ${activeTab === 'oee'
+                  ? 'bg-slate-800 text-cyan-300 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               Ciclos OEE ({records.length})
             </button>
             <button
               onClick={() => setActiveTab('novedades')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === 'novedades' 
-                  ? 'bg-slate-800 text-orange-400 shadow-sm' 
+              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${activeTab === 'novedades'
+                  ? 'bg-slate-800 text-orange-400 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               <Timer className="w-3.5 h-3.5 text-orange-400" />
               <span>Novedades MTTR ({novedades.length})</span>
@@ -134,21 +132,19 @@ export default function RecordHistoryModal({ records = [], novedades = [], onClo
                 records.map((rec) => {
                   const isSynced = rec.Sincronizado === 1;
                   return (
-                    <div 
-                      key={rec.ID_Registro} 
-                      className={`p-3 rounded-2xl border text-xs shadow-md transition-all ${
-                        isSynced 
-                          ? 'bg-slate-950 border-slate-800 text-slate-200' 
+                    <div
+                      key={rec.ID_Registro}
+                      className={`p-3 rounded-2xl border text-xs shadow-md transition-all ${isSynced
+                          ? 'bg-slate-950 border-slate-800 text-slate-200'
                           : 'bg-slate-950 border-amber-500/60 text-slate-100'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-black text-white text-[11px]">{rec.Estado_Categoria}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1 ${
-                          isSynced 
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' 
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1 ${isSynced
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                             : 'bg-amber-950 text-amber-300 border border-amber-700'
-                        }`}>
+                          }`}>
                           {isSynced ? <CheckCircle className="w-3 h-3 text-emerald-400" /> : <Clock className="w-3 h-3 text-amber-400" />}
                           {isSynced ? 'Cloud OK' : 'Pendiente'}
                         </span>
@@ -184,24 +180,22 @@ export default function RecordHistoryModal({ records = [], novedades = [], onClo
                 novedades.map((nov) => {
                   const isSynced = nov.sincronizado === 1;
                   return (
-                    <div 
-                      key={nov.id_novedad} 
-                      className={`p-3 rounded-2xl border text-xs shadow-md transition-all ${
-                        isSynced 
-                          ? 'bg-slate-950 border-slate-800 text-slate-200' 
+                    <div
+                      key={nov.id_novedad}
+                      className={`p-3 rounded-2xl border text-xs shadow-md transition-all ${isSynced
+                          ? 'bg-slate-950 border-slate-800 text-slate-200'
                           : 'bg-slate-950 border-orange-500/60 text-slate-100'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-black text-orange-400 text-[11px] flex items-center gap-1">
                           <Sparkles className="w-3.5 h-3.5 text-orange-400" />
                           <span>{nov.categoria}</span>
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1 ${
-                          isSynced 
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' 
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black flex items-center gap-1 ${isSynced
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                             : 'bg-orange-950 text-orange-300 border border-orange-700'
-                        }`}>
+                          }`}>
                           {isSynced ? <CheckCircle className="w-3 h-3 text-emerald-400" /> : <Clock className="w-3 h-3 text-orange-400" />}
                           {isSynced ? 'HTTP POST OK' : 'Tipo_Envio: NOVEDAD'}
                         </span>

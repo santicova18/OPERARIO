@@ -1,7 +1,9 @@
-import React from 'react';
-import { ArrowLeft, Mic, Sparkles, ChevronRight, AlertTriangle, PauseCircle, Play, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Mic, Sparkles, ChevronRight, AlertTriangle, PauseCircle, Play, LogOut, CheckCircle2 } from 'lucide-react';
 
 export default function SecondaryViews({ type, onBack, onSelectReason, onOpenVoiceModal, onFinalizeOpOrShift }) {
+  const [showConfirmCierre, setShowConfirmCierre] = useState(false);
+
   const isNormal = type === 'normal';
   const isPause = type === 'pause';
   const isIncidencia = type === 'incidencia';
@@ -118,13 +120,11 @@ export default function SecondaryViews({ type, onBack, onSelectReason, onOpenVoi
               🔧 Falla Mecánica
             </button>
             <button
-              onClick={() => {
-                if (onFinalizeOpOrShift) onFinalizeOpOrShift();
-              }}
-              className="tactile-btn flex-1 py-2 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[10.5px] font-extrabold text-cyan-300 text-center shadow-sm truncate flex items-center justify-center gap-1"
+              onClick={() => setShowConfirmCierre(true)}
+              className="tactile-btn flex-1 py-2 px-2 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-700 text-[10.5px] font-extrabold text-rose-300 text-center shadow-sm truncate flex items-center justify-center gap-1"
             >
-              <LogOut className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-              <span className="truncate">🏁 Finalizar OP / Cierre</span>
+              <LogOut className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+              <span className="truncate">🚨 Parada Operativa (Fin)</span>
             </button>
           </div>
         )}
@@ -139,6 +139,42 @@ export default function SecondaryViews({ type, onBack, onSelectReason, onOpenVoi
           Cancelar y Volver al Panel
         </button>
       </div>
+
+      {/* Confirmation Modal: Cierre por Parada Operativa (Motivos Conflictivos) */}
+      {showConfirmCierre && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-xs bg-white border-2 border-rose-300 rounded-3xl p-4 shadow-2xl text-center space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-50 border-2 border-rose-400 text-rose-600 flex items-center justify-center shadow-sm">
+              <AlertTriangle className="w-7 h-7 text-rose-600 stroke-[2.5]" />
+            </div>
+
+            <h4 className="text-sm font-black text-slate-950 leading-tight">
+              ¿Cerrar Orden por Parada Operativa?
+            </h4>
+            <p className="text-[11px] text-slate-600 leading-snug">
+              Se registrará el cierre por <strong>motivos conflictivos</strong> bajo la categoría <strong>"Parada Operativa"</strong> y serás redirigido a la pantalla de identificación NFC.
+            </p>
+
+            <div className="space-y-1.5 pt-1">
+              <button
+                onClick={() => {
+                  setShowConfirmCierre(false);
+                  if (onFinalizeOpOrShift) onFinalizeOpOrShift('conflicto', 'Cierre por Parada Operativa (Motivo Conflictivo)');
+                }}
+                className="tactile-btn w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-xs uppercase tracking-wider shadow-lg border-2 border-rose-400 active:scale-95"
+              >
+                CONFIRMAR PARADA OPERATIVA
+              </button>
+              <button
+                onClick={() => setShowConfirmCierre(false)}
+                className="tactile-btn w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

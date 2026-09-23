@@ -17,7 +17,7 @@ export default function App() {
 
   // 2. Session Context (Operario, Máquina y OP requeridos)
   const [session, setSession] = useState({
-    operario: 'Juan Pérez (OP-7712)',
+    operario: 'Operario 1',
     maquinaZona: '',
     ordenProduccion: ''
   });
@@ -38,6 +38,7 @@ export default function App() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showConfirmGreenModal, setShowConfirmGreenModal] = useState(false);
+  const [cierreInfo, setCierreInfo] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
   const [sqliteRecords, setSqliteRecords] = useState([]);
   const [sqliteNovedades, setSqliteNovedades] = useState([]);
@@ -168,8 +169,8 @@ export default function App() {
     } else {
       // Novelty / Pause / Incident:
       // Check if it's a critical blocking category (e.g. Mantenimiento No Programado or Falta de Material)
-      const isBlocking = isBlockingExplicit !== undefined 
-        ? isBlockingExplicit 
+      const isBlocking = isBlockingExplicit !== undefined
+        ? isBlockingExplicit
         : BLOCKING_CATEGORIES.includes(newCategoryTitle);
 
       if (isBlocking) {
@@ -230,16 +231,32 @@ export default function App() {
   // Handler for AI Voice Novelty Confirmation
   const handleConfirmVoiceNovelty = (aiCategory, aiDescription, isBlocking) => {
     setShowVoiceModal(false);
-    executeStateChange(aiCategory, aiDescription, isBlocking);
-    setActiveView('main');
+    const textLower = ((aiDescription || '') + ' ' + (aiCategory || '')).toLowerCase();
+    const isCierre = textLower.includes('cierre') || textLower.includes('finaliz') || textLower.includes('fin de turno') || textLower.includes('fin de op') || textLower.includes('100%');
+
+    if (isCierre) {
+      console.log('🏁 [Cierre Detectado por Voz] Finalizando OP y redirigiendo a Pantalla 2 (NFC)...');
+      const isConflict = aiCategory === 'Parada Operativa' || aiCategory === 'Mantenimiento No Programado' || textLower.includes('conflicto') || textLower.includes('avería') || textLower.includes('falla');
+      handleFinalizeOpOrShift(isConflict ? 'conflicto' : 'normal', aiDescription);
+    } else {
+      executeStateChange(aiCategory, aiDescription, isBlocking);
+      setActiveView('main');
+    }
   };
 
-  // Ciclo de Retorno: Finalizar OP / Cierre de Turno -> Limpiar sesión y volver a Pantalla 2 (NFC)
-  const handleFinalizeOpOrShift = async () => {
+  // Ciclo de Retorno: Finalizar OP (Normal o Conflicto) -> Limpiar sesión y volver a Pantalla 2 (NFC)
+  const handleFinalizeOpOrShift = async (motivoTipo = 'normal', customDetail = '') => {
     const nowIso = new Date().toISOString();
     const currentSession = sessionRef.current;
     const currentActiveState = activeStateRef.current;
     const currentNovelty = activeNoveltyRef.current;
+
+    const isConflict = motivoTipo === 'conflicto';
+    const categoriaFinal = isConflict ? 'Parada Operativa' : 'Operación Normal';
+    const defaultDetail = isConflict
+      ? `Cierre por Parada Operativa (Motivo Conflictivo) - OP ${currentSession.ordenProduccion || 'SIN_OP'}`
+      : `Cierre Automático Exitoso de Operación Normal - OP ${currentSession.ordenProduccion || 'SIN_OP'}`;
+    const detalleFinal = customDetail || defaultDetail;
 
     // 1. Finalize MTTR if open
     if (currentNovelty) {
@@ -254,13 +271,13 @@ export default function App() {
         operario: currentSession.operario,
         maquina_zona: currentSession.maquinaZona,
         orden_produccion_op: currentSession.ordenProduccion,
-        categoria: currentNovelty.category,
-        descripcion_ia: `[Cierre OP] ${currentNovelty.detail || currentNovelty.category}`,
+        categoria: categoriaFinal,
+        descripcion_ia: `[${isConflict ? 'Parada Operativa / Conflicto' : 'Cierre Exitoso'}] ${currentNovelty.detail || currentNovelty.category}`,
         sincronizado: 0
       });
     }
 
-    // 2. Finalize active state
+    // 2. Finalize active state in registros_tiempo
     if (currentActiveState) {
       await sqliteService.insertRecord({
         ID_Registro: currentActiveState.recordId,
@@ -269,8 +286,21 @@ export default function App() {
         Operario: currentSession.operario,
         Maquina_Zona: currentSession.maquinaZona,
         Orden_Produccion_OP: currentSession.ordenProduccion,
-        Estado_Categoria: 'Parada Operativa',
-        Detalle_Novedad: `Finalización de OP ${currentSession.ordenProduccion} / Cierre de Turno`,
+        Estado_Categoria: categoriaFinal,
+        Detalle_Novedad: detalleFinal,
+        Sincronizado: 0
+      });
+    } else {
+      // In case no state was previously saved, create a definitive closing record
+      await sqliteService.insertRecord({
+        ID_Registro: `REG-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        Timestamp_Inicio: nowIso,
+        Timestamp_Fin: nowIso,
+        Operario: currentSession.operario,
+        Maquina_Zona: currentSession.maquinaZona,
+        Orden_Produccion_OP: currentSession.ordenProduccion,
+        Estado_Categoria: categoriaFinal,
+        Detalle_Novedad: detalleFinal,
         Sincronizado: 0
       });
     }
@@ -294,8 +324,17 @@ export default function App() {
     setIsOpRunning(false);
     setIsOpBlocked(false);
 
-    // 5. Automatic redirect back to Screen 2 (NFC Identification)
-    console.log('🔄 [Ciclo de Retorno] Redirigiendo a Pantalla 2 (Identificación NFC)...');
+    // 5. Automatic redirect back to Screen 2 (NFC Identification) with corresponding status banner
+    setCierreInfo({
+      tipo: isConflict ? 'conflicto' : 'normal',
+      categoria: categoriaFinal,
+      titulo: isConflict ? '⚠️ PARADA OPERATIVA (MOTIVO CONFLICTIVO)' : '¡CIERRE DE OPERACIÓN EXITOSO!',
+      subtitulo: isConflict
+        ? 'Orden cerrada por parada operativa / conflicto en planta. Seleccione la nueva máquina y la OP.'
+        : 'Orden completada con éxito. Seleccione la nueva máquina y la OP para la siguiente labor.'
+    });
+
+    console.log(`🔄 [Ciclo de Retorno] Cierre ${isConflict ? 'por Parada Operativa (Conflicto)' : 'Automático Exitoso'} confirmado. Redirigiendo a Pantalla 2 (NFC)...`);
     setActiveView('nfc');
   };
 
@@ -341,6 +380,9 @@ export default function App() {
           onUpdateSession={(fields) => setSession(prev => ({ ...prev, ...fields }))}
           onConfirmMachineAndStart={handleConfirmMachineAndStart}
           showBackButton={activeState !== null}
+          cierreInfo={cierreInfo}
+          cierreExitoso={Boolean(cierreInfo)}
+          onClearCierreExitoso={() => setCierreInfo(null)}
         />
       )}
 
@@ -353,7 +395,7 @@ export default function App() {
           opAccumulatedSeconds={opAccumulatedSeconds}
           isOpRunning={isOpRunning}
           isOpBlocked={isOpBlocked}
-          onStartProduction={() => setActiveView('normal')}
+          onStartProduction={() => handleFinalizeOpOrShift('normal', 'Cierre Automático Exitoso de Operación Normal')}
           onOpenPauseView={() => setActiveView('pause')}
           onOpenIncidenciaView={() => setActiveView('incidencia')}
           onOpenNfcSimulator={() => setActiveView('nfc')}
@@ -386,7 +428,7 @@ export default function App() {
           onBack={() => setActiveView('main')}
           onSelectReason={handleSelectReason}
           onOpenVoiceModal={() => setShowVoiceModal(true)}
-          onFinalizeOpOrShift={handleFinalizeOpOrShift}
+          onFinalizeOpOrShift={(motivo, detalle) => handleFinalizeOpOrShift(motivo || 'conflicto', detalle)}
         />
       )}
 

@@ -35,9 +35,9 @@ const AUDIO_PRESETS = [
   },
   {
     id: 6,
-    title: 'Novedad Atípica (Respaldo Estricto)',
-    phrase: 'Evacuación preventiva del área de corte por fuerte olor a gas proveniente del exterior de la nave',
-    hint: 'Detectará: Otra Novedad (7ª Categoría)'
+    title: 'Parada Operativa (Conflicto / Detención)',
+    phrase: 'Detención de la línea por conflicto operativo o calidad en la estación',
+    hint: 'Detectará: Parada Operativa (Cierre por Conflicto ➔ Ir a Nueva Máquina)'
   }
 ];
 
@@ -193,6 +193,18 @@ export default function VoiceNoveltyModal({ onClose, onConfirmVoiceNovelty }) {
   };
 
   const isBlockingCategory = aiResult && (aiResult.es_bloqueo || BLOCKING_CATEGORIES.includes(aiResult.categoria));
+  const isCierreOperacion = Boolean(
+    (aiResult && (
+      (aiResult.descripcion_ia || '').toLowerCase().includes('cierre') ||
+      (aiResult.descripcion_ia || '').toLowerCase().includes('finaliz') ||
+      (aiResult.descripcion_ia || '').toLowerCase().includes('fin de turno') ||
+      (aiResult.descripcion_ia || '').toLowerCase().includes('fin de op') ||
+      (aiResult.categoria === 'Parada Operativa' && (aiResult.descripcion_ia || '').toLowerCase().includes('100%'))
+    )) ||
+    transcription.toLowerCase().includes('cierre') ||
+    transcription.toLowerCase().includes('finaliz') ||
+    (transcription.toLowerCase().includes('100%') && transcription.toLowerCase().includes('orden'))
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-3 animate-fadeIn select-none">
@@ -282,7 +294,9 @@ export default function VoiceNoveltyModal({ onClose, onConfirmVoiceNovelty }) {
           {/* AI Result Card */}
           {aiResult && !isAnalyzing && (
             <div className={`p-3.5 rounded-2xl border-2 text-xs shadow-md space-y-2 animate-fadeIn ${
-              isBlockingCategory 
+              isCierreOperacion
+                ? 'bg-emerald-50/70 border-emerald-400 text-emerald-950'
+                : isBlockingCategory 
                 ? 'bg-rose-50/70 border-rose-400 text-rose-950' 
                 : 'bg-white border-orange-400 text-slate-900'
             }`}>
@@ -292,7 +306,9 @@ export default function VoiceNoveltyModal({ onClose, onConfirmVoiceNovelty }) {
                   Clasificación Oficial IA
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-sm ${
-                  isBlockingCategory 
+                  isCierreOperacion
+                    ? 'bg-emerald-600 text-white animate-pulse'
+                    : isBlockingCategory 
                     ? 'bg-rose-500 text-white animate-pulse' 
                     : 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950'
                 }`}>
@@ -300,7 +316,14 @@ export default function VoiceNoveltyModal({ onClose, onConfirmVoiceNovelty }) {
                 </span>
               </div>
 
-              {isBlockingCategory && (
+              {isCierreOperacion && (
+                <div className="flex items-center gap-1.5 p-2 bg-emerald-100 border border-emerald-300 rounded-xl text-emerald-900 text-[10.5px] font-black">
+                  <Check className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                  <span>CIERRE DE OPERACIÓN ➔ Al confirmar, serás redirigido a la nueva máquina.</span>
+                </div>
+              )}
+
+              {isBlockingCategory && !isCierreOperacion && (
                 <div className="flex items-center gap-1.5 p-1.5 bg-rose-100 rounded-xl text-rose-900 text-[10px] font-black">
                   <ShieldAlert className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
                   <span>PARADA CRÍTICA: Bloqueo físico total (Cronómetro OP se detendrá).</span>
@@ -347,7 +370,9 @@ export default function VoiceNoveltyModal({ onClose, onConfirmVoiceNovelty }) {
             disabled={isAnalyzing || (!aiResult && !transcription.trim())}
             className={`tactile-btn w-full py-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all ${
               (aiResult || transcription.trim()) && !isAnalyzing
-                ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-950 border-2 border-orange-300 active:scale-95' 
+                ? isCierreOperacion
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 border-2 border-emerald-300 active:scale-95'
+                  : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-slate-950 border-2 border-orange-300 active:scale-95' 
                 : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
             }`}
           >
@@ -359,7 +384,11 @@ export default function VoiceNoveltyModal({ onClose, onConfirmVoiceNovelty }) {
             ) : (
               <>
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>Confirmar Novedad e Iniciar MTTR</span>
+                <span>
+                  {isCierreOperacion 
+                    ? 'Confirmar Cierre / Parada Operativa e Ir a Nueva Máquina' 
+                    : 'Confirmar Novedad e Iniciar MTTR'}
+                </span>
               </>
             )}
           </button>
